@@ -8,6 +8,7 @@ const char pass[] = "12345678";
 // MQTT broker details
 const char mqtt_broker[] = "test.mosquitto.org";
 const char mqtt_topic[] = "test/project";
+const char mqtt_topicesp[] = "test/esp32data";
 const char mqtt_client_id[] = "arduino_group_1.32"; // must be a unique value
 const int MQTT_PORT = 1883;
 
@@ -52,12 +53,13 @@ void connect() {
 void messageReceived(String &topic, String &payload) {
   Serial.println("Incoming: " + topic + " - " + payload);
 
-char input = payload;
+char input = payload[0];
 input = toupper(input);
 
 if (input >= 'A' && input <= 'Z') {
       int targetPosition = (input - 'A') * stepsPerLetter; // Map letter to steps
       moveToPosition(targetPosition);
+      client.publish(mqtt_topicesp, "Moving To : " + String(input));
       
     }
  
@@ -142,10 +144,4 @@ void loop() {
     connect();
   }
 
-  // Publish a message roughly every 2 seconds
-  if (millis() - lastMillis > 2000) {
-    lastMillis = millis();
-    client.publish(mqtt_topic, "Counter = " + String(counter++));
-    Serial.println("Message published: Counter = " + String(counter - 1));
-  }
 }
