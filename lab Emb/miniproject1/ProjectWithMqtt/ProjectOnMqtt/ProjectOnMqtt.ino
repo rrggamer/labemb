@@ -7,12 +7,20 @@ const char pass[] = "12345678";
 
 // MQTT broker details
 const char mqtt_broker[] = "test.mosquitto.org";
-const char mqtt_topic[] = "test/led";
+const char mqtt_topic[] = "test/project";
 const char mqtt_client_id[] = "arduino_group_1.32"; // must be a unique value
 const int MQTT_PORT = 1883;
 
 // Pin definition for LED
 #define led 19
+#define motorPin1 23
+#define motorPin2 22
+#define motorPin3 19
+#define motorPin4 18
+
+int motorSpeed = 4;  // Delay in milliseconds between each step (controls speed)
+int stepsPerLetter = 20; // Number of steps between each letter position
+int currentPosition = 0; // Tracks the current position of the motor in steps
 
 // Global variables
 WiFiClient net;
@@ -44,18 +52,72 @@ void connect() {
 void messageReceived(String &topic, String &payload) {
   Serial.println("Incoming: " + topic + " - " + payload);
 
-  // Handle the LED control based on the received payload
-  if (payload == "on") {
-    digitalWrite(led, HIGH);
-    Serial.println("LED turned ON");
-  } else if (payload == "off") {
-    digitalWrite(led, LOW);
-    Serial.println("LED turned OFF");
+char input = payload;
+input = toupper(input);
+
+if (input >= 'A' && input <= 'Z') {
+      int targetPosition = (input - 'A') * stepsPerLetter; // Map letter to steps
+      moveToPosition(targetPosition);
+      
+    }
+ 
+}
+
+void moveToPosition(int targetPosition) {
+  int totalSteps = 26 * stepsPerLetter;  // Total steps in a full circle (A-Z loop)
+  int counterclockwiseSteps = (targetPosition - currentPosition + totalSteps) % totalSteps;
+  int clockwiseSteps = (currentPosition - targetPosition + totalSteps) % totalSteps;
+
+  if (counterclockwiseSteps <= clockwiseSteps) {
+    stepCounterClockwise(counterclockwiseSteps);
+  } else {
+    stepClockwise(clockwiseSteps);
   }
+
+  currentPosition = targetPosition; // Update the current position
+}
+
+void stepClockwise(int steps) {
+  for (int i = 0; i < steps; i++) {
+    step(1, 0, 0, 0);
+    step(1, 1, 0, 0);
+    step(0, 1, 0, 0);
+    step(0, 1, 1, 0);
+    step(0, 0, 1, 0);
+    step(0, 0, 1, 1);
+    step(0, 0, 0, 1);
+    step(1, 0, 0, 1);
+  }
+}
+
+void stepCounterClockwise(int steps) {
+  for (int i = 0; i < steps; i++) {
+    step(1, 0, 0, 1);
+    step(0, 0, 0, 1);
+    step(0, 0, 1, 1);
+    step(0, 0, 1, 0);
+    step(0, 1, 1, 0);
+    step(0, 1, 0, 0);
+    step(1, 1, 0, 0);
+    step(1, 0, 0, 0);
+  }
+}
+
+void step(int pin1, int pin2, int pin3, int pin4) {
+  digitalWrite(motorPin1, pin1);
+  digitalWrite(motorPin2, pin2);
+  digitalWrite(motorPin3, pin3);
+  digitalWrite(motorPin4, pin4);
+  delay(motorSpeed);  // Control speed by adjusting this delay
 }
 
 void setup() {
   Serial.begin(9600);
+
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
+  pinMode(motorPin3, OUTPUT);
+  pinMode(motorPin4, OUTPUT);
   
   // Initialize LED pin
   pinMode(led, OUTPUT);
