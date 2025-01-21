@@ -10,6 +10,9 @@
 const char ssid[] = "@JumboPlusIoT";
 const char pass[] = "12345678";
 
+// const char ssid[] = "ixvia";
+// const char pass[] = "12345678";
+
 const char mqtt_broker[]="test.mosquitto.org";
 const char mqtt_topic[]="pha/command";
 const char mqtt_client_id[]="arduino_group_pha"; // must change this string to a unique value
