@@ -1,4 +1,5 @@
 #include "esp_camera.h"
+#include <ESPAsyncWebServer.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include "../config/camconfig.h"
@@ -26,12 +27,14 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length);
 void setup_camera();
 void capture_image();
 void detect_colors(uint8_t* image_data, size_t len);
+void setup_web_server();
 
 void setup() {
   Serial.begin(115200);
   setup_wifi();
   setup_mqtt();
   setup_camera();
+  setup_web_server();
 }
 
 void loop() {
@@ -53,6 +56,8 @@ void setup_wifi() {
     Serial.print(".");
   }
   Serial.println("Connected to WiFi");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
 }
 
 // MQTT setup
@@ -110,7 +115,7 @@ void setup_camera() {
   config.pixel_format = PIXFORMAT_JPEG; 
   
   if(psramFound()){
-    config.frame_size = FRAMESIZE_UXGA;
+    config.frame_size = FRAMESIZE_QQVGA; //FRAMESIZE_UXGA
     config.jpeg_quality = 10;
     config.fb_count = 2;
   } else {
@@ -137,6 +142,8 @@ void capture_image() {
   }
   Serial.println("Image captured");
 
+  // Serial.write(fb->buf, fb->len);
+
   // Process image
   detect_colors(fb->buf, fb->len);
 
@@ -152,4 +159,48 @@ void detect_colors(uint8_t* image_data, size_t len) {
 
   // Send the result via MQTT
   client.publish(mqtt_publish_topic, detected_colors.c_str());
+}
+
+AsyncWebServer server(80); // Web server listening on port 80
+
+// Function to send the camera image to the browser
+void handleJPGStream(AsyncWebServerRequest *request) {
+  camera_fb_t *fb = esp_camera_fb_get();
+  if (!fb) {
+    Serial.println("Camera capture failed");
+    request->send(500, "text/plain", "Failed to capture image");
+    return;
+  }
+
+  // Send the captured image as JPEG content to the client
+  AsyncWebServerResponse *response = request->beginResponse_P(200, "image/jpeg", fb->buf, fb->len);
+  response->addHeader("Cache-Control", "no-store");  // Prevents caching
+  request->send(response);
+
+  esp_camera_fb_return(fb);  // Return the frame buffer
+}
+
+void setup_web_server() {
+  // Serve the stream of the camera image
+  server.on("/stream", HTTP_GET, [](AsyncWebServerRequest *request){
+    handleJPGStream(request);
+  });
+
+  // Serve a simple webpage with a button to trigger capture
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    String html = "<html><body><h1>ESP32 Camera Web Server</h1>";
+    html += "<a href='/stream'><button>View Camera Stream</button></a>";
+    html += "<br><br><a href='/capture'><button>Capture Image</button></a>";
+    html += "</body></html>";
+    request->send(200, "text/html", html);
+  });
+
+  // Trigger the capture action when the "Capture Image" button is pressed
+  server.on("/capture", HTTP_GET, [](AsyncWebServerRequest *request){
+    capture_image();  // Trigger the image capture
+    request->send(200, "text/html", "<html><body><h1>Image Captured!</h1><a href='/'>Go back</a></body></html>");
+  });
+
+  // Start the server
+  server.begin();
 }
