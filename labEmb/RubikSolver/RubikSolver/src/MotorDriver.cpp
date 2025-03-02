@@ -3,11 +3,11 @@
 // const int stepPins[] = {4, 16, 17, 5, 18, 19};
 // const int dirPins[] = {12, 14, 27, 26, 25, 33};  
 
-const int stepPins[] = {33, 19, 26, 5, 14, 16};
+const int stepPins[] = {32, 19, 26, 5, 14, 16};
 const int dirPins[] = {25, 18, 27, 17, 12, 4};  
 
 
-#define STEP_PIN_1  33   // Motor 1 (U)
+#define STEP_PIN_1  32   // Motor 1 (U)
 #define DIR_PIN_1   25    
 
 #define STEP_PIN_2  19   // Motor 2 (R)
@@ -54,65 +54,91 @@ void B2() { B(); B(); }
 void solveSequence() {
 
   U();
-  delay(2000);
-
+  delay(100);
+  
   R();
-  delay(2000);
+  delay(100);
 
   Move_F();
-  delay(2000);
+  delay(100);
   
   D();
-  delay(2000);
+  delay(100);
   
-  digitalWrite(enable_motor5, LOW);
-
   L();
-  delay(2000);
+  delay(100);
   
   B();
-  delay(2000);
+  delay(100);
 
+  delay(1000);
 
   B(true);
-  delay(2000);
+  delay(100);
 
   L(true);
-  delay(2000);
-
-  digitalWrite(enable_motor5, HIGH);
-
+  delay(100);
 
   D(true);
-  delay(2000);
+  delay(100);
 
   Move_F(true);
-  delay(2000);
+  delay(100);
 
   R(true);
-  delay(2000);
+  delay(100);
 
   U(true);
-  delay(2000);
+  delay(100);
 
 }
 
 void setup() {
 
-  delay(3000);
+  delay(1000);
   
   for (int i = 0; i < 6; i++) {
     pinMode(stepPins[i], OUTPUT);
     pinMode(dirPins[i], OUTPUT);
   }
 
-  pinMode(enable_motor5, OUTPUT);
-  digitalWrite(enable_motor5, HIGH);
+  // pinMode(enable_motor5, OUTPUT);
+  // digitalWrite(enable_motor5, HIGH);
 
   delay(1000);
+
   solveSequence();
 }
 
+
 void loop() {
-  // No automatic loop action yet
+  // const int steps = 2000;
+  // const int delayMicros = 500;
+  // const int delayMillis = 1000;
+
+  // // Move all motors forward
+  // for (int m = 0; m < 6; m++) {
+  //   digitalWrite(dirPins[m], HIGH);
+  //   for (int i = 0; i < steps; i++) {
+  //     digitalWrite(stepPins[m], HIGH);
+  //     delayMicroseconds(delayMicros);
+  //     digitalWrite(stepPins[m], LOW);
+  //     delayMicroseconds(delayMicros);
+  //   }
+  //   delay(delayMillis);
+  // }
+
+  // // Move all motors backward
+  // for (int m = 0; m < 6; m++) {
+  //   digitalWrite(dirPins[m], LOW);
+  //   for (int i = 0; i < steps; i++) {
+  //     digitalWrite(stepPins[m], HIGH);
+  //     delayMicroseconds(delayMicros);
+  //     digitalWrite(stepPins[m], LOW);
+  //     delayMicroseconds(delayMicros);
+  //   }
+  //   delay(delayMillis);
+  // }
 }
+
+
